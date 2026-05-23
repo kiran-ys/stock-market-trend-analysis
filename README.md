@@ -1,0 +1,1 @@
+# stock-market-trend-analysis
