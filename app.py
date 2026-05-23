@@ -235,7 +235,9 @@ def generate_commentary(stocks, ticker_to_label):
                            for t, df in stocks.items()})
     corr = ret_df.corr()
     if len(corr) >= 2:
-        np.fill_diagonal(corr.values, np.nan)
+        corr_vals = corr.to_numpy(copy=True)
+        np.fill_diagonal(corr_vals, np.nan)
+        corr = pd.DataFrame(corr_vals, index=corr.index, columns=corr.columns)
         lo_pair = corr.stack().idxmin()
         points.append(f"**{lo_pair[0]}** and **{lo_pair[1]}** have the lowest correlation "
                       f"({corr.loc[lo_pair[0], lo_pair[1]]:.2f}) — pairing them in a "
