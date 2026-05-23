@@ -1,6 +1,8 @@
 # Stock Market Trend Analysis — Web App
 
-**DADV Mini-Project, Team No. 3, Sapthagiri NPS University**
+**Live demo:** https://real-time-stock-trend-analysis.streamlit.app
+
+**By Kiran Y S — Sapthagiri NPS University**
 
 An interactive web application that analyses 5 years of historical stock data for
 Indian (Reliance, TCS, Infosys) and US (Apple, Microsoft, Google) stocks using live data
@@ -70,14 +72,10 @@ This pulls fresh data and overwrites `index.html`. Internet required.
 1. Push these files to a public **GitHub repo**.
 2. Sign up at [streamlit.io/cloud](https://streamlit.io/cloud) with your GitHub account.
 3. Click "New app", choose the repo, point to `app.py`, deploy.
-4. You'll get a public URL like `https://team3-stock-analysis.streamlit.app/`.
+4. You'll get a public URL like `https://real-time-stock-trend-analysis.streamlit.app/`.
 
-## Team
+## Author
 
-| Name | SRN |
-|---|---|
-| Kiran Y S | 24SUUBECS0942 |
-| Kiran R | 24SUUBECS0940 |
-| Keshava R | 24SUUBECS0929 |
-| Kiran Kumar D K | 24SUUBECS0935 |
-| K R Kotresh | 24SUUBELCS035 |
+**Kiran Y S** — Sapthagiri NPS University
+
+Designed, built, and deployed by me using Python, Streamlit, Plotly, and the Yahoo Finance API.
