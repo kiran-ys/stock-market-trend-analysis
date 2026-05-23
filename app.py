@@ -235,7 +235,11 @@ def generate_commentary(stocks, ticker_to_label):
                            for t, df in stocks.items()})
     corr = ret_df.corr()
     if len(corr) >= 2:
-        np.fill_diagonal(corr.values, np.nan)
+        # Use a writable copy: df.values can be read-only on newer NumPy/pandas,
+        # which makes np.fill_diagonal raise a ValueError on Streamlit Cloud.
+        corr_vals = corr.to_numpy(copy=True)
+        np.fill_diagonal(corr_vals, np.nan)
+        corr = pd.DataFrame(corr_vals, index=corr.index, columns=corr.columns)
         lo_pair = corr.stack().idxmin()
         points.append(f"**{lo_pair[0]}** and **{lo_pair[1]}** have the lowest correlation "
                       f"({corr.loc[lo_pair[0], lo_pair[1]]:.2f}) — pairing them in a "
@@ -282,6 +286,13 @@ if custom_input:
         if tkr not in selected_tickers:
             selected_tickers.append(tkr)
             ticker_to_label[tkr] = tkr
+
+# Stocks added from the main Overview page (persist across reruns)
+st.session_state.setdefault("extra_tickers", [])
+for tkr in st.session_state["extra_tickers"]:
+    if tkr not in selected_tickers:
+        selected_tickers.append(tkr)
+        ticker_to_label.setdefault(tkr, tkr)
 
 # Date range
 st.sidebar.subheader("📅 Date Range")
@@ -351,6 +362,15 @@ if not stocks:
     st.error("Yahoo Finance returned no data. Check tickers and date range.")
     st.stop()
 
+# Warn about any requested ticker that returned no usable data
+missing = [t for t in selected_tickers if t not in stocks]
+if missing:
+    st.warning(
+        "Couldn't load data for: " + ", ".join(missing) +
+        ". Check the symbol (Indian stocks need the correct NSE name, e.g. HDFCBANK.NS) "
+        "or pick a wider date range — newly listed stocks may lack history."
+    )
+
 # ──────────────────────────────────────────────────────────────
 # LIVE TICKER BAR
 # ──────────────────────────────────────────────────────────────
@@ -379,7 +399,57 @@ tabs = st.tabs([
 
 # ============== TAB 1 — OVERVIEW ==============
 with tabs[0]:
-    st.header("Overview — Descriptive Statistics")
+    st.header("Overview")
+
+    # ---- Add-a-stock search (flows into every tab automatically) ----
+    st.markdown("**➕ Add a stock** — search any company and it appears across all tabs.")
+    ac1, ac2, ac3 = st.columns([0.55, 0.30, 0.15])
+    with ac1:
+        new_symbol = st.text_input(
+            "Stock symbol", key="add_symbol",
+            placeholder="e.g. HDFCBANK, TATAMOTORS, TSLA, NVDA",
+            label_visibility="collapsed")
+    with ac2:
+        new_market = st.selectbox(
+            "Market", ["🇮🇳 India (NSE)", "🇺🇸 US"], key="add_market",
+            label_visibility="collapsed")
+    with ac3:
+        add_clicked = st.button("➕ Add", use_container_width=True)
+
+    if add_clicked and new_symbol.strip():
+        sym = new_symbol.strip().upper()
+        if new_market.startswith("🇮🇳") and not sym.endswith(".NS"):
+            sym = sym + ".NS"
+        if sym in selected_tickers:
+            st.info(f"{sym} is already shown.")
+        else:
+            st.session_state["extra_tickers"].append(sym)
+            st.rerun()
+
+    # Show / clear stocks added from this page
+    if st.session_state["extra_tickers"]:
+        rc1, rc2 = st.columns([0.8, 0.2])
+        rc1.caption("Added here: " + ", ".join(st.session_state["extra_tickers"]))
+        if rc2.button("Clear added", use_container_width=True):
+            st.session_state["extra_tickers"] = []
+            st.rerun()
+
+    # ---- Live price cards for every selected stock ----
+    if quotes:
+        st.markdown("##### 💹 Live prices")
+        qitems = list(quotes.items())
+        for i in range(0, len(qitems), 4):
+            row = qitems[i:i + 4]
+            cols = st.columns(len(row))
+            for col, (t, q) in zip(cols, row):
+                col.metric(
+                    label=f"{ticker_to_label.get(t, t)} ({t})",
+                    value=f"{q['price']:,.2f}",
+                    delta=f"{q['change']:+.2f} ({q['change_pct']:+.2f}%)",
+                )
+
+    st.markdown("---")
+    st.subheader("Descriptive Statistics")
     st.markdown("Summary of selected stocks: starting price, current price, range, average, volatility.")
     rows = []
     for t, df in stocks.items():
