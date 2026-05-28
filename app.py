@@ -22,6 +22,11 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from datetime import date, datetime, timedelta
+try:
+    from zoneinfo import ZoneInfo  # Python 3.9+
+    IST = ZoneInfo("Asia/Kolkata")
+except Exception:
+    IST = None
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -334,8 +339,9 @@ with header_l:
     st.title("📈 Stock Market Trend Analysis")
     st.caption("Real-time analytics with live Yahoo Finance data.")
 with header_r:
-    now = datetime.now().strftime("%a, %b %d %Y · %H:%M:%S")
-    badge = ("🟢 **LIVE**" if auto_refresh else "⚪ Static")
+    now = datetime.now(IST).strftime("%a, %b %d %Y · %H:%M:%S IST") if IST \
+          else datetime.now().strftime("%a, %b %d %Y · %H:%M:%S")
+    badge = ("🟢 <b>LIVE</b>" if auto_refresh else "⚪ Static")
     st.markdown(f"""
     <div style="text-align:right; padding-top:18px;">
       <div style="font-size:18px;">{badge}</div>
